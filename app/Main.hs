@@ -4,13 +4,14 @@ import System.Environment (getArgs)
 import Text.Read (readMaybe)
 import PrimeTime (runPrimeTime)
 import SmokeTest (runSmokeTest)
+import MeansToAnEnd (runMeansToAnEnd)
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
     [serverType, port] -> handleServer serverType port
-    _ -> putStrLn "Usage: server-selector <primetime|smoketest> <port>"
+    _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend> <port>"
 
 handleServer :: String -> String -> IO ()
 handleServer serverType portStr =
@@ -19,7 +20,8 @@ handleServer serverType portStr =
       case serverType of
         "primetime" -> runPrimeTime validPort
         "smoketest" -> runSmokeTest validPort
-        _ -> putStrLn "Usage: server-selector <primetime|smoketest> <port>"
+        "meanstoanend" -> runMeansToAnEnd validPort
+        _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend> <port>"
     Nothing -> putStrLn "Error: Port must be a number between 1 and 65535."
 
 validatePort :: String -> Maybe String
