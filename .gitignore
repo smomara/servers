@@ -1,0 +1,8 @@
+*
+
+!.gitignore
+!LICENSE
+!servers.cabal
+
+!src
+!src/*
