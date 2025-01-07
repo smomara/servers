@@ -5,8 +5,11 @@ module PrimeTime where
 
 import Data.Aeson
 import Data.ByteString.Lazy (fromStrict, toStrict)
+import Data.ByteString.Char8 (ByteString, isSuffixOf, lines)
 import GHC.Generics (Generic)
 import Network.Simple.TCP
+import Control.Monad (when)
+import Data.Numbers.Primes (isPrime)
 
 data Request = Request
   { reqMethod :: String
@@ -33,21 +36,12 @@ instance ToJSON Response where
       , "prime" .= prime
       ]
 
-isPrime :: Double -> Bool
-isPrime n
+isPrime' :: Double -> Bool
+isPrime' n
   | n /= fromIntegral m = False
-  | otherwise = prime m
+  | otherwise = isPrime m
  where
   m = truncate n :: Int
-  prime num
-    | num < 2 = False
-    | num == 2 = True
-    | even num = False
-    | otherwise = null divisors
-   where
-    divisors = do
-      x <- [3, 5 .. floor (sqrt (fromIntegral num :: Double))]
-      if num `mod` x == 0 then pure x else []
 
 runPrimeTime :: ServiceName -> IO ()
 runPrimeTime port = serve (Host "0.0.0.0") port $ \(sock, _) -> handleClient sock
@@ -63,42 +57,41 @@ sendResponse sock response = do
   let responseBytes = toStrict $ encode response
   send sock (responseBytes <> "\n")
 
-handleClient :: Socket -> IO ()
-handleClient sock = do
-  -- TODO: make able to handle message until ends
-  -- message may be greater than 4096
-  -- might involve making a recvUntil function in the library
-  -- recvUntil :: (MonadIO m, Ex.MonadMask m)
-  --           => NS.Socket                   -- ^ Socket to receive data from.
-  --           -> Int                         -- ^ Maximum chunk size to receive at once.
-  --           -> (BS.ByteString -> Bool)     -- ^ Predicate to check if the received data meets the condition.
-  --           -> m BS.ByteString             -- ^ Accumulated data received.
-  -- recvUntil sock chunkSize predicate = go BS.empty
-  --   where
-  --     go :: BS.ByteString -> m BS.ByteString
-  --     go acc = do
-  --       mchunk <- recv sock chunkSize
-  --       case mchunk of
-  --         Nothing -> return acc  -- Remote end closed the connection.
-  --         Just chunk -> do
-  --           let newAcc = BS.append acc chunk
-  --           if predicate newAcc
-  --             then return newAcc
-  --             else go newAcc
+recvAll :: Socket -> ByteString -> IO ByteString
+recvAll sock acc = do
   mbytes <- recv sock 4096
   case mbytes of
-    Nothing -> return ()
+    Nothing -> return acc
     Just bytes -> do
-      let request = decode (fromStrict bytes) :: Maybe Request
-      case request of
-        Nothing -> sendResponse sock malformedResponse
-        Just req -> do
-          if reqMethod req /= "isPrime"
-            then sendResponse sock malformedResponse
-            else do
-              let primeCheck = isPrime (reqNumber req)
-              sendResponse sock (validResponse primeCheck)
-              handleClient sock
+      let newAcc = acc <> bytes
+      if "\n" `isSuffixOf` newAcc
+        then return newAcc
+        else recvAll sock newAcc
+
+handleClient :: Socket -> IO ()
+handleClient sock = do
+  bytes <- recvAll sock ""
+  let requestLines = Data.ByteString.Char8.lines bytes
+  continue <- processLines sock requestLines
+  when continue (handleClient sock)
+
+processLines :: Socket -> [ByteString] -> IO Bool
+processLines _ [] = return True
+processLines sock (line : rest) = do
+  let request = decode (fromStrict line) :: Maybe Request
+  case request of
+    Nothing -> do
+      sendResponse sock malformedResponse
+      return False
+    Just req -> do
+      if reqMethod req /= "isPrime"
+        then do
+          sendResponse sock malformedResponse
+          return False
+        else do
+          let result = isPrime' (reqNumber req)
+          sendResponse sock (validResponse result)
+          processLines sock rest
 
 main :: IO ()
 main = do
