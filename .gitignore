@@ -6,3 +6,6 @@
 
 !src
 !src/*
+
+!app
+!app/*
