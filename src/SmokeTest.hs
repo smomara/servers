@@ -1,4 +1,4 @@
-module SmokeTest where
+module SmokeTest (runSmokeTest) where
 
 import Network.Simple.TCP
 
@@ -11,8 +11,3 @@ handleClient sock = do
   case mbytes of
     Nothing -> return ()
     Just bytes -> send sock bytes >> handleClient sock
-
-main :: IO ()
-main = do
-  let port = "44444"
-  runSmokeTest port

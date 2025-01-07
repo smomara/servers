@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module PrimeTime where
+module PrimeTime (runPrimeTime) where
 
 import Data.Aeson
 import Data.ByteString.Lazy (fromStrict, toStrict)
@@ -92,8 +92,3 @@ processLines sock (line : rest) = do
           let result = isPrime' (reqNumber req)
           sendResponse sock (validResponse result)
           processLines sock rest
-
-main :: IO ()
-main = do
-  let port = "44444"
-  runPrimeTime port
