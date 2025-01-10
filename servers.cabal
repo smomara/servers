@@ -14,6 +14,7 @@ library
                     , PrimeTime
                     , MeansToAnEnd
                     , BudgetChat
+                    , MobInTheMiddle
     build-depends:    base ^>=4.18.2.1
                     , network-simple
                     , aeson

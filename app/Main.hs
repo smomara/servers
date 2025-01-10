@@ -6,13 +6,17 @@ import PrimeTime (runPrimeTime)
 import SmokeTest (runSmokeTest)
 import MeansToAnEnd (runMeansToAnEnd)
 import BudgetChat (runBudgetChat)
+import MobInTheMiddle (runMobInTheMiddle)
+
+usage :: String
+usage = "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat|mobinthemiddle> <port>"
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
     [serverType, port] -> handleServer serverType port
-    _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat> <port>"
+    _ -> putStrLn usage
 
 handleServer :: String -> String -> IO ()
 handleServer serverType portStr =
@@ -23,7 +27,8 @@ handleServer serverType portStr =
         "smoketest" -> runSmokeTest validPort
         "meanstoanend" -> runMeansToAnEnd validPort
         "budgetchat" -> runBudgetChat validPort
-        _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat> <port>"
+        "mobinthemiddle" -> runMobInTheMiddle validPort
+        _ -> putStrLn usage
     Nothing -> putStrLn "Error: Port must be a number between 1 and 65535."
 
 validatePort :: String -> Maybe String
