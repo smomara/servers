@@ -1,8 +1,6 @@
 cabal-version:      3.0
 name:               servers
 version:            0.1.0.0
-license:            BSD-3-Clause
-license-file:       LICENSE
 author:             Sean O'Mara
 maintainer:         mseanomara@gmail.com
 build-type:         Simple
@@ -15,6 +13,7 @@ library
     exposed-modules:  SmokeTest
                     , PrimeTime
                     , MeansToAnEnd
+                    , BudgetChat
     build-depends:    base ^>=4.18.2.1
                     , network-simple
                     , aeson
@@ -23,6 +22,8 @@ library
                     , stm
                     , containers
                     , binary
+                    , text
+                    , async
     hs-source-dirs:   src
     default-language: Haskell2010
 

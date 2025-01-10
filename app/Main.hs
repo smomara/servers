@@ -5,13 +5,14 @@ import Text.Read (readMaybe)
 import PrimeTime (runPrimeTime)
 import SmokeTest (runSmokeTest)
 import MeansToAnEnd (runMeansToAnEnd)
+import BudgetChat (runBudgetChat)
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
     [serverType, port] -> handleServer serverType port
-    _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend> <port>"
+    _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat> <port>"
 
 handleServer :: String -> String -> IO ()
 handleServer serverType portStr =
@@ -21,7 +22,8 @@ handleServer serverType portStr =
         "primetime" -> runPrimeTime validPort
         "smoketest" -> runSmokeTest validPort
         "meanstoanend" -> runMeansToAnEnd validPort
-        _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend> <port>"
+        "budgetchat" -> runBudgetChat validPort
+        _ -> putStrLn "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat> <port>"
     Nothing -> putStrLn "Error: Port must be a number between 1 and 65535."
 
 validatePort :: String -> Maybe String

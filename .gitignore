@@ -1,7 +1,6 @@
 *
 
 !.gitignore
-!LICENSE
 !README.md
 !servers.cabal
 
