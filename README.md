@@ -10,6 +10,7 @@ challenges, implemented in Haskell.
 - [2: Means to an End](./src/MeansToAnEnd.hs) - TCP server for price data analysis
 - [3: Budget Chat](./src/BudgetChat.hs) - Simple TCP Chat Server
 - [5: Mob In The Middle](./src/MobInTheMiddle.hs) - Nefarious Proxy for Budget Chat
+- [6: Speed Daemon](./src/SpeedDaemon.hs) - Speed limit enforcement with cameras and dispatchers
 
 ## Running
 

@@ -7,9 +7,10 @@ import SmokeTest (runSmokeTest)
 import MeansToAnEnd (runMeansToAnEnd)
 import BudgetChat (runBudgetChat)
 import MobInTheMiddle (runMobInTheMiddle)
+import SpeedDaemon (runSpeedDaemon)
 
 usage :: String
-usage = "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat|mobinthemiddle> <port>"
+usage = "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat|mobinthemiddle|speeddaemon> <port>"
 
 main :: IO ()
 main = do
@@ -28,6 +29,7 @@ handleServer serverType portStr =
         "meanstoanend" -> runMeansToAnEnd validPort
         "budgetchat" -> runBudgetChat validPort
         "mobinthemiddle" -> runMobInTheMiddle validPort
+        "speeddaemon" -> runSpeedDaemon validPort
         _ -> putStrLn usage
     Nothing -> putStrLn "Error: Port must be a number between 1 and 65535."
 
