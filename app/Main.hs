@@ -8,6 +8,7 @@ import MeansToAnEnd (runMeansToAnEnd)
 import BudgetChat (runBudgetChat)
 import MobInTheMiddle (runMobInTheMiddle)
 import SpeedDaemon (runSpeedDaemon)
+import InsecureSocketsLayer (runInsecureSocketsLayer)
 
 usage :: String
 usage = "Usage: server-selector <primetime|smoketest|meanstoanend|budgetchat|mobinthemiddle|speeddaemon> <port>"
@@ -30,6 +31,7 @@ handleServer serverType portStr =
         "budgetchat" -> runBudgetChat validPort
         "mobinthemiddle" -> runMobInTheMiddle validPort
         "speeddaemon" -> runSpeedDaemon validPort
+        "insecuresocketslayer" -> runInsecureSocketsLayer validPort
         _ -> putStrLn usage
     Nothing -> putStrLn "Error: Port must be a number between 1 and 65535."
 

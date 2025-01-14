@@ -16,6 +16,7 @@ library
                     , BudgetChat
                     , MobInTheMiddle
                     , SpeedDaemon
+                    , InsecureSocketsLayer
     other-modules:    SpeedDaemon.Types
                     , SpeedDaemon.Protocol
                     , SpeedDaemon.Server
