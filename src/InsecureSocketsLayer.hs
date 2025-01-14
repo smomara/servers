@@ -2,7 +2,7 @@
 
 module InsecureSocketsLayer where
 
-import Control.Monad (unless)
+import Control.Monad (foldM, unless)
 import Data.Bits (shiftL, shiftR, xor, (.&.), (.|.))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -10,7 +10,6 @@ import Data.Char (chr, isDigit, ord)
 import Data.List (maximumBy)
 import Data.Ord (comparing)
 import Data.Word (Word8)
-import Debug.Trace (traceShowM)
 import Network.Simple.TCP
 
 data CipherOp
@@ -71,22 +70,12 @@ isNoOpCipher :: CipherSpec -> Bool
 isNoOpCipher ops = all (\b -> foldl (flip $ applyOp 0) [b] ops == [b]) [0 .. 255]
 
 parseRequest :: ByteString -> [(Int, String)]
-parseRequest bs =
-  map parseToy $
-    BS.split (fromIntegral $ ord ',') $
-      if BS.last bs == fromIntegral (ord '\n')
-        then BS.init bs
-        else bs
-
-splitOn :: Word8 -> [Word8] -> [[Word8]]
-splitOn delim = go
+parseRequest = map parseToy . BS.split (fromIntegral $ ord ',') . stripNewline
  where
-  go [] = []
-  go xs =
-    let (part, rest) = break (== delim) xs
-     in part : case rest of
-          [] -> []
-          (_ : xs') -> go xs'
+  stripNewline bs
+    | BS.null bs = bs
+    | BS.last bs == fromIntegral (ord '\n') = BS.init bs
+    | otherwise = bs
 
 parseToy :: ByteString -> (Int, String)
 parseToy bs =
@@ -97,33 +86,57 @@ parseToy bs =
 findMaxToy :: [(Int, String)] -> String
 findMaxToy = snd . maximumBy (comparing fst)
 
-processLine :: Socket -> CipherSpec -> ByteString -> IO ()
-processLine sock cipherSpec line = do
+data StreamState = StreamState
+  { clientPos :: Integer
+  , serverPos :: Integer
+  , buffer :: ByteString
+  }
+  deriving (Show)
+
+initialState :: StreamState
+initialState = StreamState 0 0 BS.empty
+
+processLine :: Socket -> CipherSpec -> StreamState -> ByteString -> IO StreamState
+processLine sock cipherSpec state line = do
   let toys = parseRequest line
       maxToy = findMaxToy toys
       response = BS.pack $ map (fromIntegral . ord) (maxToy ++ "\n")
-      encodedResponse = encodeCipher 0 cipherSpec response
+      encodedResponse = encodeCipher (serverPos state) cipherSpec response
   send sock encodedResponse
+  return $
+    state
+      { serverPos = serverPos state + toInteger (BS.length encodedResponse)
+      }
 
-handleClient :: Socket -> CipherSpec -> Integer -> ByteString -> IO ()
-handleClient sock cipherSpec pos buffer = do
+processStream :: Socket -> CipherSpec -> StreamState -> IO ()
+processStream sock cipherSpec state = do
   maybeBytes <- recv sock 4096
   case maybeBytes of
     Nothing -> return () -- Client disconnected
     Just bytes -> do
-      let decoded = decodeCipher pos cipherSpec bytes
-          newBuffer = buffer <> decoded
-          newPos = pos + toInteger (BS.length bytes)
-      if BS.null newBuffer
-        then return ()
-        else
-          if BS.last newBuffer == fromIntegral (ord '\n')
-            then do
-              mapM_ (processLine sock cipherSpec) $
-                filter (not . BS.null) $
-                  BS.split (fromIntegral $ ord '\n') newBuffer
-              handleClient sock cipherSpec newPos BS.empty
-            else handleClient sock cipherSpec newPos newBuffer
+      let decoded = decodeCipher (clientPos state) cipherSpec bytes
+          combined = buffer state <> decoded
+          (bufLines, remaining) = splitLines combined
+          newClientPos = clientPos state + toInteger (BS.length bytes)
+
+      newState <-
+        foldM
+          ( \st line ->
+              if BS.null line
+                then return st
+                else processLine sock cipherSpec st line
+          )
+          state{clientPos = newClientPos}
+          bufLines
+
+      processStream sock cipherSpec newState{buffer = remaining}
+ where
+  splitLines bs = case BS.breakSubstring (BS.singleton $ fromIntegral $ ord '\n') bs of
+    (line, rest)
+      | BS.null rest -> ([], bs) -- No complete line yet
+      | otherwise ->
+          let (moreLines, remaining) = splitLines (BS.drop 1 rest)
+           in (line : moreLines, remaining)
 
 runInsecureSocketsLayer :: ServiceName -> IO ()
 runInsecureSocketsLayer port = serve (Host "0.0.0.0") port $ \(sock, _) -> do
@@ -132,4 +145,4 @@ runInsecureSocketsLayer port = serve (Host "0.0.0.0") port $ \(sock, _) -> do
     Nothing -> return () -- Invalid cipher spec
     Just cipherSpec ->
       unless (isNoOpCipher cipherSpec) $
-        handleClient sock cipherSpec 0 BS.empty
+        processStream sock cipherSpec initialState

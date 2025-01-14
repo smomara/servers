@@ -11,6 +11,7 @@ challenges, implemented in Haskell.
 - [3: Budget Chat](./src/BudgetChat.hs) - Simple TCP Chat Server
 - [5: Mob In The Middle](./src/MobInTheMiddle.hs) - Nefarious Proxy for Budget Chat
 - [6: Speed Daemon](./src/SpeedDaemon.hs) - Speed limit enforcement with cameras and dispatchers
+- [8: Insecure Sockets Layer](./src/InsecureSocketsLayer.hs) - Custom encryption layer for (in)secure TCP communication
 
 ## Running
 

@@ -39,5 +39,6 @@ executable server-selector
     main-is:          Main.hs
     build-depends:    base ^>=4.18.2.1
                     , servers
+                    , containers
     hs-source-dirs:   app
     default-language: Haskell2010
